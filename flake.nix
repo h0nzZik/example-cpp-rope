@@ -24,8 +24,6 @@
       # A Nixpkgs overlay.
       overlay = final: prev: {
 
-        #cpprope = with final; clangStdenv.mkDerivation rec {
-        #cpprope = with final; llvmPackages_17.stdenv.mkDerivation rec {
         cpprope = with final; stdenv.mkDerivation rec {
           pname = "cpprope";
           inherit version;
@@ -36,13 +34,7 @@
             build2
             bdep
             bpkg
-            #gcc13
-            #libstdcxx5
-            #llvmPackages_17.libcxxClang
-            #llvmPackages_17.clangUseLLVM
             microsoft-gsl
-            #catch2_3
-            #doctest
           ];
         };
 

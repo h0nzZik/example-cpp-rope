@@ -8,3 +8,7 @@ import rope;
 TEST_CASE("trivial") {
     REQUIRE(true);
 }
+
+TEST_CASE("rope_something") {
+    REQUIRE(3 == rope_something());
+}

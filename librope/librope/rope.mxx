@@ -48,3 +48,10 @@ private:
 public:
 
 };
+
+
+export
+int rope_something() {
+    return 3;
+}
+
