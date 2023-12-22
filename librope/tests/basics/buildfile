@@ -1,0 +1,3 @@
+import libs = librope%lib{rope}
+
+exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}

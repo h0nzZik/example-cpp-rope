@@ -1,8 +1,7 @@
 {
   description = "An over-engineered Hello World in C";
 
-  # Nixpkgs / NixOS version to use.
-  inputs.nixpkgs.url = "nixpkgs/nixos-23.11";
+  inputs.nixpkgs.url = "nixpkgs/master";
 
   outputs = { self, nixpkgs }:
     let
@@ -31,7 +30,7 @@
 
           src = ./.;
 
-          nativeBuildInputs = [ cmake microsoft-gsl catch2_3 ];
+          nativeBuildInputs = [ build2 bdep gcc13 microsoft-gsl catch2_3 ];
         };
 
       };
