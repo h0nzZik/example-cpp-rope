@@ -1,12 +1,9 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
+
 #import xxxx_libs += libhello%lib{hello}
 
-lib{rope}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
-
-hxx{version}: in{version} $src_root/manifest
-
-hxx{export}@./: cxx.importable = false
+lib{rope}: cxx{rope} $impl_libs $intf_libs $libs
 
 # Build options.
 #

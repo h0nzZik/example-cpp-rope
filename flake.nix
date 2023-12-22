@@ -24,13 +24,13 @@
       # A Nixpkgs overlay.
       overlay = final: prev: {
 
-        cpprope = with final; stdenv.mkDerivation rec {
+        cpprope = with final; clangStdenv.mkDerivation rec {
           pname = "cpprope";
           inherit version;
 
           src = ./.;
 
-          nativeBuildInputs = [ build2 bdep gcc13 microsoft-gsl catch2_3 ];
+          nativeBuildInputs = [ build2 bdep bpkg microsoft-gsl catch2_3 ];
         };
 
       };

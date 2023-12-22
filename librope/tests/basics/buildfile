@@ -1,3 +1,4 @@
-import libs = librope%lib{rope}
+import libs  = librope%lib{rope}
+import libs += libCatch2%lib{Catch2}
 
 exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}

@@ -1,35 +1,11 @@
-#include <sstream>
-#include <stdexcept>
+#include <catch2/catch_session.hpp>
 
-#include <librope/version.hxx>
-#include <librope/rope.hxx>
+int main( int argc, char* argv[] ) {
+  // your setup ...
 
-#undef NDEBUG
-#include <cassert>
+  int result = Catch::Session().run( argc, argv );
 
-int main ()
-{
-  using namespace std;
-  using namespace rope;
+  // your clean-up...
 
-  // Basics.
-  //
-  {
-    ostringstream o;
-    say_hello (o, "World");
-    assert (o.str () == "Hello, World!\n");
-  }
-
-  // Empty name.
-  //
-  try
-  {
-    ostringstream o;
-    say_hello (o, "");
-    assert (false);
-  }
-  catch (const invalid_argument& e)
-  {
-    assert (e.what () == string ("empty name"));
-  }
+  return result;
 }
