@@ -1,4 +1,5 @@
 import libs  = librope%lib{rope}
-import libs += libCatch2%lib{Catch2}
+#import libs += libCatch2%lib{Catch2}
+import doctest = doctest%lib{doctest}
 
-exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}
+exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**} $doctest

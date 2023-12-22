@@ -9,4 +9,5 @@ email: jenda.tusil@gmail.com
 #build-error-email: jenda.tusil@gmail.com
 depends: * build2 >= 0.15.0
 depends: * bpkg >= 0.15.0
+depends: doctest ^ 2.4.10
 #depends: libhello ^1.0.0

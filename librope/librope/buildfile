@@ -3,7 +3,7 @@ impl_libs = # Implementation dependencies.
 
 #import xxxx_libs += libhello%lib{hello}
 
-lib{rope}: cxx{rope} $impl_libs $intf_libs $libs
+lib{rope}: mxx{rope} $impl_libs $intf_libs $libs
 
 # Build options.
 #
