@@ -1,7 +1,0 @@
-project = librope
-
-using version
-using config
-using test
-using install
-using dist

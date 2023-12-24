@@ -1,3 +1,0 @@
-# librope
-
-C++ library

@@ -31,10 +31,11 @@
           src = ./.;
 
           nativeBuildInputs = [
-            build2
-            bdep
-            bpkg
+            gnumake
+            clang-tools_17
             microsoft-gsl
+            python311Packages.compiledb
+            llvmPackages_17.libcxxClang
           ];
         };
 
