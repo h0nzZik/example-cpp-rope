@@ -33,6 +33,8 @@
           nativeBuildInputs = [
             gnumake
             clang-tools_17
+            gcc13
+            doctest
             microsoft-gsl
             python311Packages.compiledb
             llvmPackages_17.libcxxClang
