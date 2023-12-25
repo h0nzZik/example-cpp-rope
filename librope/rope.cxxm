@@ -1,10 +1,19 @@
 // https://en.wikipedia.org/wiki/Rope_(data_structure)
+module;
+
+#include <string>
+#include <variant>
+#include <memory>
 
 export module rope;
 
+/*
 import <string>;
 import <variant>;
 import <memory>;
+*/
+
+//export module rope;
 
 struct Leaf;
 struct InnerNode;
@@ -50,8 +59,7 @@ public:
 };
 
 
-export
-int rope_something() {
+export int rope_something() {
     return 3;
 }
 

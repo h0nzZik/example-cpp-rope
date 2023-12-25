@@ -1,5 +1,5 @@
 {
-  description = "An over-engineered Hello World in C";
+  description = "A library for ropes";
 
   inputs.nixpkgs.url = "nixpkgs/master";
 
@@ -24,7 +24,7 @@
       # A Nixpkgs overlay.
       overlay = final: prev: {
 
-        cpprope = with final; stdenv.mkDerivation rec {
+        cpprope = with final; gcc13Stdenv.mkDerivation rec {
           pname = "cpprope";
           inherit version;
 
@@ -33,12 +33,21 @@
           nativeBuildInputs = [
             gnumake
             clang-tools_17
-            gcc13
-            doctest
-            microsoft-gsl
+            #gcc13
+            #libstdcxx5
             python311Packages.compiledb
-            llvmPackages_17.libcxxClang
+            #llvmPackages_17.libcxxClang
+            llvmPackages_17.clangUseLLVM
           ];
+
+          buildInputs = [
+            doctest
+            #catch2_3
+            catch2
+            microsoft-gsl
+          ];
+
+          hardeningDisable = [ "all" ];
         };
 
       };
@@ -54,32 +63,17 @@
       # package.
       defaultPackage = forAllSystems (system: self.packages.${system}.cpprope);
 
-      # Tests run by 'nix flake check' and by Hydra.
-      checks = forAllSystems
-        (system:
-          with nixpkgsFor.${system};
+      devShells = forAllSystems (system: {
+        cpprope =
+        let
+          cpprope = self.outputs.packages.${system}.cpprope;
+        in
+          (nixpkgsFor.${system}).mkShell.override { stdenv = (nixpkgsFor.${system}).gcc13Stdenv;  } {
+            inputsFrom = [cpprope];
+            packages = [];
+            hardeningDisable = [ "all" ];
+          };
+      });
 
-          {
-            inherit (self.packages.${system}) cpprope;
-
-            # Additional tests, if applicable.
-            test = stdenv.mkDerivation {
-              pname = "cpprope-test";
-              inherit version;
-
-              buildInputs = [ cpprope ];
-
-              dontUnpack = true;
-
-              buildPhase = ''
-                echo 'running some integration tests'
-                [[ $(cpprope) = 'Hello World!' ]]
-              '';
-
-              installPhase = "mkdir -p $out";
-            };
-          }
-        );
-
-    };
+   };
 }

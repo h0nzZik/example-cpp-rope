@@ -25,11 +25,21 @@ all: tests
 .PHONY: tests
 tests: $(BUILDROOT)/run_tests
 
-$(BUILDROOT)/run_tests: $(BUILDROOT)/rope.o $(BUILDROOT)/tests.o $(BUILDROOT)/test_main.o $(CFGDEPS)
-	$(CXX) $(CXXFLAGS) $< -o $@
+$(BUILDROOT)/run_tests: $(BUILDROOT)/test_main.o $(BUILDROOT)/test_rope.o $(BUILDROOT)/rope.o $(CFGDEPS) #$(BUILDROOT)/rope.pcm 
+	$(CXX) $(CXXFLAGS) -o $@ $^ # $(SYSMODULESFLAGS) $(LDFLAGS)  
+#	$(CXX) $(CXXFLAGS) -o $@ $^ -lCatch2Main -lCatch2 --verbose $(LDFLAGS) # $(SYSMODULESFLAGS) $(LDFLAGS) #-fmodule-file=$(BUILDROOT)/rope.pcm  
 
-$(BUILDROOT)/%.o: $(SRCDIR)/%.cxx $(CFGDEPS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILDROOT)/test_%.o: $(SRCDIR)/test_%.cxx $(CFGDEPS) $(BUILDROOT)/rope.pcm 
+	$(CXX) $(CXXFLAGS) -c $< $(SYSMODULESFLAGS) -o $@ -fmodule-file=rope=$(BUILDROOT)/rope.pcm 
+
+$(BUILDROOT)/%.pcm: $(SRCDIR)/%.cxxm $(CFGDEPS)
+	$(CXX) $(CXXFLAGS) $(MCXXFLAGS) -c $< $(SYSMODULESFLAGS) -o $@
+
+$(BUILDROOT)/rope.o: $(BUILDROOT)/rope.pcm
+	mkdir -p $(shell dirname $@)
+	$(CXX) $(CXXFLAGS) -o $@ -c $< 
+
 
 .PHONY: clean
 clean: $(CFGCLEAN)

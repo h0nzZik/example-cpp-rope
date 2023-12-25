@@ -4,8 +4,8 @@ endif
 
 CC=gcc
 CXX=g++
-CXXFLAGS=-std=c++20 -fmodules-ts
-CXXFLAGS+=-Wall -Wextra -pedantic
+CXXFLAGS=-std=gnu++20 -fmodules-ts
+CXXFLAGS+=-Wall -Wextra --verbose -v
 
 
 CFGDEPS=$(BUILDROOT)/gcm.cache
@@ -18,7 +18,8 @@ $(BUILDROOT)/gcm.cache:
 	  -xc++-system-header iostream \
 	  -xc++-system-header variant \
 	  -xc++-system-header memory \
-	  -xc++-system-header string
+	  -xc++-system-header string \
+	  -xc++-user-header catch2/catch_all.hpp
 
 
 .PHONY: cfgclean
