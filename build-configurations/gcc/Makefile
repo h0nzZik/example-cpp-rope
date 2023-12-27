@@ -4,7 +4,7 @@ endif
 
 CC=gcc
 CXX=g++
-CXXFLAGS=-std=gnu++20 -fmodules-ts
+CXXFLAGS=-std=gnu++23 -fmodules-ts
 CXXFLAGS+=-Wall -Wextra
 MCXXFLAGS=-x c++
 MODULE_ARG=

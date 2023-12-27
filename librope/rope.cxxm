@@ -4,34 +4,69 @@ module;
 #include <string>
 #include <variant>
 #include <memory>
+#include <optional>
+#include <cassert>
 
 export module rope;
 
-/*
-import <string>;
-import <variant>;
-import <memory>;
-*/
-
-//export module rope;
+// As in https://en.cppreference.com/w/cpp/utility/variant/visit
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
 
 struct Leaf;
 struct InnerNode;
 using Node = std::variant<Leaf, InnerNode>;
 
-struct Leaf {
-    std::string s;
-    size_t weight;
+class ManagedNode final : private std::unique_ptr<Node> {
+public:
+    ManagedNode() = default;
+    ManagedNode(ManagedNode && old);
+    explicit ManagedNode(Node node);
+    ManagedNode(ManagedNode const &other);
+
+    ManagedNode& operator=(ManagedNode other) noexcept;
+
+    using std::unique_ptr<Node>::operator*;
+    using std::unique_ptr<Node>::operator->;
+    using std::unique_ptr<Node>::operator bool;
 };
 
-struct InnerNode {
+struct Leaf final {
     std::string s;
-    size_t weight;
+    size_t length;
+};
+
+struct InnerNode final {
+    std::string s;
+    size_t length;
     size_t sum_of_lengths_of_left_subtree;
-    std::unique_ptr<Node> left;
-    std::unique_ptr<Node> right;
+    ManagedNode left;
+    ManagedNode right;
 };
 
+ManagedNode& ManagedNode::operator=(ManagedNode other) noexcept {
+    other.swap(*this);
+    return *this;
+}
+
+ManagedNode::ManagedNode(ManagedNode && old) = default;
+
+ManagedNode::ManagedNode(Node node) : std::unique_ptr<Node>(std::make_unique<Node>(std::move(node))) {}
+
+ManagedNode::ManagedNode(ManagedNode const &other) : std::unique_ptr<Node>(other?std::make_unique<Node>(*other) : nullptr) {
+
+}
+
+size_t sum_of_lengths(Node const &node) {
+    return std::visit(overloaded{
+            [](Leaf const &leaf) -> size_t { return leaf.length; },
+            [](InnerNode const &inner_node) -> size_t {
+                return sum_of_lengths(*inner_node.left) + sum_of_lengths(*inner_node.right);
+            }
+        },
+        node
+    );
+}
 
 // Collect leaves
 // --------------
@@ -51,14 +86,57 @@ struct InnerNode {
 
 class Rope {
 private:
-    Node root;
+    ManagedNode root;
 
 
+    explicit Rope(ManagedNode n);
+    static Rope concatenate(Rope const &a, Rope const &b);
 public:
-
+    Rope() = default;
+    Rope(Rope const &other) = default;
+    Rope(Rope &&old) = default;
 };
 
+Rope::Rope(ManagedNode n) : root(std::move(n)) {
 
+}
+
+Rope Rope::concatenate(Rope const &a, Rope const &b) {
+    /* From Wikipedia:
+        A concatenation can be performed simply by creating a new root node with left = S1 and right = S2,
+        which is constant time. The weight of the parent node is set to the length of the left child S1,
+        which would take O( log ⁡ N ) time, if the tree is balanced. 
+     */
+    if (a.root && !b.root) {
+        return Rope{a};
+    }
+    if (!a.root && b.root) {
+        return Rope{b};
+    }
+    if (!a.root && !b.root) {
+        return Rope{};
+    }
+    assert (a.root && b.root);
+
+    size_t const left_len = sum_of_lengths(*a.root);
+
+
+    /*
+      The main reason for existence of the `ManageNode` class is that
+      I wanted the `InnerNode` class to be an aggregate, so that I can use
+      designated initializers here.
+    */
+    InnerNode in{
+        .s = {},
+        .length = left_len,
+        .sum_of_lengths_of_left_subtree = left_len,
+        .left = a.root,
+        .right = b.root,
+    };
+    return Rope{ManagedNode{Node{in}}};
+}
+
+/* This is just to test that the build system with modules work */
 export int rope_something() {
     return 3;
 }
