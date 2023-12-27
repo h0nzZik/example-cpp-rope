@@ -8,7 +8,10 @@ CXXFLAGS=-std=gnu++20 -fmodules-ts
 CXXFLAGS+=-Wall -Wextra
 MCXXFLAGS=-x c++
 MODULE_ARG=
-#MODULE_ARG=$(1)
 PCM_O_DEPENDENCY=$(1).o
 
 include ../../librope/Makefile
+
+$(BUILDROOT)/%.pcm.o: $(BUILDROOT)/%.pcm
+	mkdir -p $(shell dirname $@)
+	cp $< $@

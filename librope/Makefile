@@ -36,11 +36,6 @@ $(BUILDROOT)/test_%.o: $(SRCDIR)/test_%.cxx $(BUILDROOT)/rope.pcm
 $(BUILDROOT)/%.pcm: $(SRCDIR)/%.cxxm
 	$(CXX) $(CXXFLAGS) $(MCXXFLAGS) -c $< -o $@
 
-$(BUILDROOT)/rope.pcm.o: $(BUILDROOT)/rope.pcm
-	mkdir -p $(shell dirname $@)
-	cp $< $@
-	#$(CXX) $(CXXFLAGS) -o $@ -c $< 
-
 
 .PHONY: clean
 clean: $(CFGCLEAN)
