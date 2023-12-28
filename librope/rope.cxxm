@@ -261,19 +261,28 @@ std::pair<ManagedNode,ManagedNode> split(Node const &self, size_t idx) {
     }, self);
 }
 
-char atIndex(Node const &self, size_t idx) {
+template < typename NodeT, typename RetT, typename LeafT, typename InnerNodeT >
+RetT atIndex_helper(NodeT &self, size_t idx) {
     return std::visit(overloaded{
-        [idx](Leaf const &leaf) {
+        [idx](LeafT &leaf) -> RetT {
             assert(idx < leaf.s.size());
             return leaf.s[idx];
         },
-        [idx](InnerNode const &inner_node) {
+        [idx](InnerNodeT &inner_node) -> RetT {
             if (idx > inner_node.length) {
-                return atIndex(*inner_node.right, idx - inner_node.length);
+                return atIndex_helper<NodeT, RetT, LeafT, InnerNodeT>(*inner_node.right, idx - inner_node.length);
             }
-            return atIndex(*inner_node.left, idx);
+            return atIndex_helper<NodeT, RetT, LeafT, InnerNodeT>(*inner_node.left, idx);
         }
     }, self);
+}
+
+char const & atIndex(Node const &self, size_t idx) {
+    return atIndex_helper<Node const, char const &, Leaf const, InnerNode const>(self, idx);
+}
+
+char & atIndex(Node &self, size_t idx) {
+    return atIndex_helper<Node, char &, Leaf, InnerNode>(self, idx);
 }
 
 ManagedNode delete_segment(Node const &self, size_t start, size_t length) {
@@ -282,17 +291,43 @@ ManagedNode delete_segment(Node const &self, size_t start, size_t length) {
     return rebalance(ManagedNode{Node{make_InnerNode(a, d)}});
 }
 
+std::string to_string(Node const &self) {
+    return std::visit(overloaded{
+        [](Leaf const &leaf) {
+            return leaf.s.substr(0, leaf.length);
+        },
+        [](InnerNode const &inner_node) {
+            return (to_string(*inner_node.left) +
+                inner_node.s.substr(0, inner_node.length) +
+                to_string(*inner_node.right));
+        }
+    }, self);
+}
+
+export
 class Rope {
 private:
     ManagedNode root;
 
-
     explicit Rope(ManagedNode n);
-    static Rope concatenate(Rope const &a, Rope const &b);
+
 public:
     Rope() = default;
     Rope(Rope const &other) = default;
     Rope(Rope &&old) = default;
+
+    Rope delete_segment(size_t start, size_t length) const;
+    explicit operator std::string() const;
+
+    // TODO: a public, non-static version
+    static Rope concatenate(Rope const &a, Rope const &b);
+
+    Rope operator+(Rope const &b) const;
+
+    char const & operator[](size_t idx) const;
+
+    char & operator[](size_t idx);
+
 };
 
 Rope::Rope(ManagedNode n) : root(std::move(n)) {
@@ -315,11 +350,39 @@ Rope Rope::concatenate(Rope const &a, Rope const &b) {
         return Rope{};
     }
     assert (a.root && b.root);
-    // TODO rebalanace
-    return Rope{ManagedNode{Node{make_InnerNode(a.root, b.root)}}};
+    return Rope{rebalance(ManagedNode{Node{make_InnerNode(a.root, b.root)}})};
 }
 
 
+Rope::operator std::string() const {
+    if (!this->root) {
+        return {};
+    }
+    return to_string(*this->root);
+}
+
+Rope Rope::delete_segment(size_t start, size_t length) const {
+    if (!this->root) {
+        return {};
+    }
+
+    return Rope(::delete_segment(*this->root, start, length));
+}
+
+Rope Rope::operator+(Rope const &b) const {
+    return Rope::concatenate(*this, b);
+}
+
+
+char const & Rope::operator[](size_t idx) const {
+    assert (this->root);
+    return atIndex(*this->root, idx);
+}
+
+char & Rope::operator[](size_t idx) {
+    assert (this->root);
+    return atIndex(*this->root, idx);
+}
 
 
 /* This is just to test that the build system with modules work */
