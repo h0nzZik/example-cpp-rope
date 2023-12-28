@@ -37,6 +37,7 @@ $(BUILDROOT)/%.pcm: $(SRCDIR)/%.cxxm
 	$(CXX) $(CXXFLAGS) $(MCXXFLAGS) -c $< -o $@
 
 
+# TODO
 .PHONY: clean
-clean: $(CFGCLEAN)
+clean:
 	

@@ -13,3 +13,8 @@ PCM_O_DEPENDENCY=$(1)
 include ../../librope/Makefile
 
 
+.PHONY: check
+check:
+	clang-tidy $(SRCDIR)/*.cxxm -checks=cppcoreguidelines-\* -- $(CXXFLAGS)
+
+

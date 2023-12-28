@@ -27,11 +27,13 @@ using Node = std::variant<Leaf, InnerNode>;
 class ManagedNode final : private std::unique_ptr<Node> {
 public:
     ManagedNode() = default;
-    ManagedNode(ManagedNode && old);
+    ManagedNode(ManagedNode && old) noexcept = default;
     explicit ManagedNode(Node node);
     ManagedNode(ManagedNode const &other);
+    ~ManagedNode() = default;
 
-    ManagedNode& operator=(ManagedNode other) noexcept;
+    ManagedNode& operator=(ManagedNode const & other) noexcept;
+    ManagedNode& operator=(ManagedNode &&) noexcept = default;
 
     using std::unique_ptr<Node>::get;
     using std::unique_ptr<Node>::operator*;
@@ -52,12 +54,11 @@ struct InnerNode final {
     ManagedNode right;
 };
 
-ManagedNode& ManagedNode::operator=(ManagedNode other) noexcept {
-    other.swap(*this);
+ManagedNode& ManagedNode::operator=(ManagedNode const &other) noexcept {
+    ManagedNode tmp{other};
+    tmp.swap(*this);
     return *this;
 }
-
-ManagedNode::ManagedNode(ManagedNode && old) = default;
 
 ManagedNode::ManagedNode(Node node) : std::unique_ptr<Node>(std::make_unique<Node>(std::move(node))) {}
 
@@ -314,7 +315,11 @@ private:
 public:
     Rope() = default;
     Rope(Rope const &other) = default;
-    Rope(Rope &&old) = default;
+    Rope(Rope &&old) noexcept = default;
+    ~Rope() = default;
+
+    Rope& operator=(Rope const&) = default;
+    Rope& operator=(Rope &&) noexcept = default;
 
     Rope delete_segment(size_t start, size_t length) const;
     explicit operator std::string() const;
