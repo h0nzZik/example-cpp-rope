@@ -8,6 +8,7 @@ module;
 #include <cassert>
 #include <algorithm>
 #include <vector>
+#include <span>
 
 #include <gsl/gsl>
 
@@ -119,6 +120,24 @@ size_t length_of(Node const &node) {
     }, node);
 }
 
+
+InnerNode make_InnerNode(ManagedNode a, ManagedNode b) {
+    assert (a && b);
+    size_t const left_len = sum_of_lengths(*a);
+    /*
+      The main reason for existence of the `ManageNode` class is that
+      I wanted the `InnerNode` class to be an aggregate, so that I can use
+      designated initializers here.
+    */
+    return InnerNode{
+        .s = {},
+        .length = 0,
+        .sum_of_lengths_of_left_subtree = left_len,
+        .left = std::move(a),
+        .right = std::move(b),
+    };
+}
+
 bool is_balanced(Node const &node) {
     size_t const n = depth(node);
     size_t const Fnp2 = fib<size_t>(n+2);
@@ -132,6 +151,7 @@ bool is_balanced(Node const &node) {
 // adding each node N to S. Add l' to L.
 // The parent of l' (p) is at the top of the stack.
 // Repeat the procedure for p's right subtree.
+// TODO use GSL's not_null
 std::vector<Leaf const *> collect_leaves(Node const &node) {
     std::vector<Node const *> stack{};
     std::vector<Leaf const *> leaves{};
@@ -163,9 +183,38 @@ std::vector<Leaf const *> collect_leaves(Node const &node) {
 }
 
 
+
+// TODO use GSL's not_null
+ManagedNode merge(std::span<Leaf const *> leaves) {
+    Expects(!leaves.empty());
+
+    if (leaves.size() == 1) {
+        return ManagedNode{Node{std::move(*leaves[0])}};
+    }
+
+    if (leaves.size() == 2) {
+        return ManagedNode{Node{make_InnerNode(
+            ManagedNode{Node{std::move(*leaves[0])}},
+            ManagedNode{Node{std::move(*leaves[1])}}
+        )}};
+    }
+
+    size_t const mid = leaves.size() / 2;
+    return ManagedNode{Node{make_InnerNode(merge(leaves.first(mid)), merge(leaves.last(leaves.size() - mid)))}};
+};
+
 // Rebalance
 // ---------
 // Collect the set of leaves L and rebuild the tree from the bottom-up.
+
+ManagedNode rebalance(ManagedNode const & mnode) {
+    if (is_balanced(*mnode)) {
+        return mnode;
+    }
+
+    std::vector<Leaf const *> leaves = collect_leaves(*mnode);
+    return merge(std::span<Leaf const*>(leaves));
+}
 
 
 class Rope {
@@ -201,23 +250,7 @@ Rope Rope::concatenate(Rope const &a, Rope const &b) {
         return Rope{};
     }
     assert (a.root && b.root);
-
-    size_t const left_len = sum_of_lengths(*a.root);
-
-
-    /*
-      The main reason for existence of the `ManageNode` class is that
-      I wanted the `InnerNode` class to be an aggregate, so that I can use
-      designated initializers here.
-    */
-    InnerNode in{
-        .s = {},
-        .length = 0,
-        .sum_of_lengths_of_left_subtree = left_len,
-        .left = a.root,
-        .right = b.root,
-    };
-    return Rope{ManagedNode{Node{in}}};
+    return Rope{ManagedNode{Node{make_InnerNode(a.root, b.root)}}};
 }
 
 
