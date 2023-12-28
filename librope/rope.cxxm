@@ -318,6 +318,8 @@ public:
     Rope(Rope &&old) noexcept = default;
     ~Rope() = default;
 
+    explicit Rope(std::string str);
+
     Rope& operator=(Rope const&) = default;
     Rope& operator=(Rope &&) noexcept = default;
 
@@ -338,6 +340,8 @@ public:
 Rope::Rope(ManagedNode n) : root(std::move(n)) {
 
 }
+
+Rope::Rope(std::string str) : Rope(ManagedNode{Node{Leaf{.s=str, .length=str.size()}}}) {}
 
 Rope Rope::concatenate(Rope const &a, Rope const &b) {
     /* From Wikipedia:
