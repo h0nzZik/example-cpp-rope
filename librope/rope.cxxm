@@ -261,6 +261,27 @@ std::pair<ManagedNode,ManagedNode> split(Node const &self, size_t idx) {
     }, self);
 }
 
+char atIndex(Node const &self, size_t idx) {
+    return std::visit(overloaded{
+        [idx](Leaf const &leaf) {
+            assert(idx < leaf.s.size());
+            return leaf.s[idx];
+        },
+        [idx](InnerNode const &inner_node) {
+            if (idx > inner_node.length) {
+                return atIndex(*inner_node.right, idx - inner_node.length);
+            }
+            return atIndex(*inner_node.left, idx);
+        }
+    }, self);
+}
+
+ManagedNode delete_segment(Node const &self, size_t start, size_t length) {
+    auto [a,b] = split(self, start);
+    auto [c,d] = split(self, start + length);
+    return rebalance(ManagedNode{Node{make_InnerNode(a, d)}});
+}
+
 class Rope {
 private:
     ManagedNode root;
@@ -294,6 +315,7 @@ Rope Rope::concatenate(Rope const &a, Rope const &b) {
         return Rope{};
     }
     assert (a.root && b.root);
+    // TODO rebalanace
     return Rope{ManagedNode{Node{make_InnerNode(a.root, b.root)}}};
 }
 
