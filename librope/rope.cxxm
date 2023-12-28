@@ -9,6 +9,7 @@ module;
 #include <algorithm>
 #include <vector>
 #include <span>
+#include <utility>
 
 #include <gsl/gsl>
 
@@ -216,6 +217,49 @@ ManagedNode rebalance(ManagedNode const & mnode) {
     return merge(std::span<Leaf const*>(leaves));
 }
 
+
+// split
+// ------
+// There are two cases that must be dealt with:
+// * The split point is at the end of a string (i.e. after the last character of a leaf node)
+// * The split point is in the middle of a string.
+// The second case reduces to the first by splitting the string at the split point to create two new leaf nodes,
+// then creating a new node that is the parent of the two component strings. 
+
+std::pair<ManagedNode,ManagedNode> split(Node const &self, size_t idx) {
+    return std::visit(overloaded{
+        [idx](Leaf const &leaf) -> std::pair<ManagedNode,ManagedNode> {
+            if (idx >= leaf.length) {
+                return std::pair(ManagedNode{Node{leaf}}, ManagedNode{Node{Leaf{.s={}, .length=0}}});
+            }
+            assert (idx > leaf.s.size());
+            return std::pair(
+                ManagedNode{Node{Leaf{.s=leaf.s.substr(0, idx), .length=idx}}},
+                ManagedNode{Node{Leaf{.s=leaf.s.substr(idx), .length=leaf.s.size()-idx}}}
+            );
+        },
+        [idx](InnerNode const &inner_node) -> std::pair<ManagedNode,ManagedNode> {
+            if (idx < inner_node.length) {
+                assert(inner_node.left);
+                auto [a,b] = split(*inner_node.left, idx);
+                return std::pair(
+                    rebalance(ManagedNode{std::move(a)}),
+                    rebalance(ManagedNode{Node{make_InnerNode(ManagedNode{std::move(b)}, inner_node.right)}})
+                );
+            }
+            if (idx > inner_node.length) {
+                assert(inner_node.right);
+                auto [a,b] = split(*inner_node.right, idx - inner_node.length);
+                return std::pair(
+                    rebalance(ManagedNode{Node{make_InnerNode(inner_node.left, ManagedNode{std::move(a)})}}),
+                    rebalance(ManagedNode{std::move(b)})
+                );
+            }
+            assert (idx == inner_node.length);
+            return {inner_node.left, inner_node.right};
+        }
+    }, self);
+}
 
 class Rope {
 private:
