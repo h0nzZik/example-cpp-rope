@@ -136,23 +136,20 @@ std::vector<Leaf const *> collect_leaves(Node const &node) {
     std::vector<Node const *> stack{};
     std::vector<Leaf const *> leaves{};
 
-    // TODO: use GSL's `not_null` type
-    // pre: curr_node != nullptr
     // post: !leaves.empty()
-    auto const traverse_downleft = [&stack,&leaves](Node const *curr_node) {
-        assert (curr_node != nullptr);
-        // invariant: curr_node != nullptr
+    auto const traverse_downleft = [&stack,&leaves](gsl::not_null<Node const *> curr_node) {
         while (std::holds_alternative<InnerNode>(*curr_node)) {
             stack.push_back(curr_node);
-            InnerNode const * const curr_inner_node = std::get_if<InnerNode>(curr_node);
+            InnerNode const * const curr_inner_node = std::get_if<InnerNode>(curr_node.get());
             assert (curr_inner_node != nullptr);
             curr_node = curr_inner_node->left.get();
-            assert (curr_node != nullptr);
         }
         assert(std::holds_alternative<Leaf>(*curr_node));
-        Leaf const * const curr_leaf = std::get_if<Leaf>(curr_node);
+        Leaf const * const curr_leaf = std::get_if<Leaf>(curr_node.get());
         assert (curr_leaf != nullptr);
         leaves.push_back(curr_leaf);
+
+        Ensures(!leaves.empty());
     };
 
     traverse_downleft(&node);
