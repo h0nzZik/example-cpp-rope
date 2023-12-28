@@ -6,6 +6,11 @@ module;
 #include <memory>
 #include <optional>
 #include <cassert>
+#include <algorithm>
+#include <vector>
+
+#include <gsl/gsl>
+
 
 export module rope;
 
@@ -26,6 +31,7 @@ public:
 
     ManagedNode& operator=(ManagedNode other) noexcept;
 
+    using std::unique_ptr<Node>::get;
     using std::unique_ptr<Node>::operator*;
     using std::unique_ptr<Node>::operator->;
     using std::unique_ptr<Node>::operator bool;
@@ -68,6 +74,57 @@ size_t sum_of_lengths(Node const &node) {
     );
 }
 
+template <typename Num>
+Num fib(Num n) {
+    if (n == 0) {
+        return 0;
+    }
+
+    if (n == 1) {
+        return 1;
+    }
+
+    Num i = 2;
+    Num fi = 2;
+    Num fim1 = 1;
+    Num fim2 = 0;
+    // invariant:
+    //    fi == i-th Fibonacci number
+    // && fim1 == (i-1)-th Fibonacci number
+    // && fim2 == (i-2)-th Fibonacci number
+    while (i < n) {
+        Num const next_fi = fim1 + fim2;
+        fim2 = fim1;
+        fim1 = fi;
+        fi = next_fi;
+        i++;
+    }
+    assert(i == n);
+    return fi;
+}
+
+size_t depth(Node const &node) {
+    return std::visit(overloaded{
+        [](Leaf const &) -> size_t { return 0; },
+        [](InnerNode const &inner_node) -> size_t {
+            return 1 + std::max(depth(*inner_node.left), depth(*inner_node.right));
+        }
+    }, node);
+}
+
+size_t length_of(Node const &node) {
+    return std::visit(overloaded{
+        [](Leaf const &leaf) { return leaf.length; },
+        [](InnerNode const &inner_node) { return inner_node.length; }
+    }, node);
+}
+
+bool is_balanced(Node const &node) {
+    size_t const n = depth(node);
+    size_t const Fnp2 = fib<size_t>(n+2);
+    return length_of(node) >= Fnp2;
+}
+
 // Collect leaves
 // --------------
 // Create a stack S and a list L.
@@ -75,8 +132,38 @@ size_t sum_of_lengths(Node const &node) {
 // adding each node N to S. Add l' to L.
 // The parent of l' (p) is at the top of the stack.
 // Repeat the procedure for p's right subtree.
-//
-// TODO: implement
+std::vector<Leaf const *> collect_leaves(Node const &node) {
+    std::vector<Node const *> stack{};
+    std::vector<Leaf const *> leaves{};
+
+    // TODO: use GSL's `not_null` type
+    // pre: curr_node != nullptr
+    // post: !leaves.empty()
+    auto const traverse_downleft = [&stack,&leaves](Node const *curr_node) {
+        assert (curr_node != nullptr);
+        // invariant: curr_node != nullptr
+        while (std::holds_alternative<InnerNode>(*curr_node)) {
+            stack.push_back(curr_node);
+            InnerNode const * const curr_inner_node = std::get_if<InnerNode>(curr_node);
+            assert (curr_inner_node != nullptr);
+            curr_node = curr_inner_node->left.get();
+            assert (curr_node != nullptr);
+        }
+        assert(std::holds_alternative<Leaf>(*curr_node));
+        Leaf const * const curr_leaf = std::get_if<Leaf>(curr_node);
+        assert (curr_leaf != nullptr);
+        leaves.push_back(curr_leaf);
+    };
+
+    traverse_downleft(&node);
+    while(!stack.empty()) {
+        Node const * const top_node = stack.back();
+        stack.pop_back();
+        traverse_downleft(top_node);
+    }
+
+    return leaves;
+}
 
 
 // Rebalance
@@ -128,13 +215,16 @@ Rope Rope::concatenate(Rope const &a, Rope const &b) {
     */
     InnerNode in{
         .s = {},
-        .length = left_len,
+        .length = 0,
         .sum_of_lengths_of_left_subtree = left_len,
         .left = a.root,
         .right = b.root,
     };
     return Rope{ManagedNode{Node{in}}};
 }
+
+
+
 
 /* This is just to test that the build system with modules work */
 export int rope_something() {
